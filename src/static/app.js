@@ -614,7 +614,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (button.classList.contains("share-twitter")) {
           shareOnTwitter(activityName, description, schedule);
         } else if (button.classList.contains("share-facebook")) {
-          shareOnFacebook(activityName, description, schedule);
+          shareOnFacebook();
         } else if (button.classList.contains("share-email")) {
           shareViaEmail(activityName, description, schedule);
         } else if (button.classList.contains("share-copy")) {
@@ -855,7 +855,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.open(twitterUrl, '_blank', 'width=600,height=400');
   }
 
-  function shareOnFacebook(activityName, description, schedule) {
+  function shareOnFacebook() {
     const url = window.location.href;
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
     window.open(facebookUrl, '_blank', 'width=600,height=400');
@@ -865,24 +865,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const subject = `Check out ${activityName} at Mergington High School`;
     const body = `I wanted to share this activity with you:\n\n${activityName}\n\n${description}\n\nSchedule: ${schedule}\n\nView more activities at: ${window.location.href}`;
     const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoUrl;
+    window.location = mailtoUrl;
   }
 
   function copyShareLink(activityName, description, schedule, button) {
     const shareText = `${activityName} - ${description} - ${schedule}\n${window.location.href}`;
     
+    // Show temporary success feedback on button
+    function showButtonFeedback() {
+      const originalTitle = button.title;
+      button.title = 'Copied!';
+      button.style.backgroundColor = 'var(--success)';
+      setTimeout(() => {
+        button.title = originalTitle;
+        button.style.backgroundColor = '';
+      }, 2000);
+    }
+    
     // Try to use the modern clipboard API
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(shareText)
         .then(() => {
-          // Show temporary success feedback
-          const originalTitle = button.title;
-          button.title = 'Copied!';
-          button.style.backgroundColor = '#2e7d32';
-          setTimeout(() => {
-            button.title = originalTitle;
-            button.style.backgroundColor = '';
-          }, 2000);
+          showButtonFeedback();
           showMessage('Link copied to clipboard!', 'success');
         })
         .catch((err) => {
@@ -890,7 +894,8 @@ document.addEventListener("DOMContentLoaded", () => {
           showMessage('Failed to copy link', 'error');
         });
     } else {
-      // Fallback for older browsers
+      // Fallback for older browsers using deprecated document.execCommand
+      // Note: execCommand is deprecated but kept for legacy browser support
       const textarea = document.createElement('textarea');
       textarea.value = shareText;
       textarea.style.position = 'fixed';
@@ -899,14 +904,8 @@ document.addEventListener("DOMContentLoaded", () => {
       textarea.select();
       try {
         document.execCommand('copy');
+        showButtonFeedback();
         showMessage('Link copied to clipboard!', 'success');
-        const originalTitle = button.title;
-        button.title = 'Copied!';
-        button.style.backgroundColor = '#2e7d32';
-        setTimeout(() => {
-          button.title = originalTitle;
-          button.style.backgroundColor = '';
-        }, 2000);
       } catch (err) {
         console.error('Failed to copy:', err);
         showMessage('Failed to copy link', 'error');
